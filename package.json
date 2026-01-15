@@ -1,0 +1,13 @@
+{
+  "name": "kantor-walut-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "api": "cd packages/api && npm start",
+    "mobile": "cd packages/mobile && npm start",
+    "install-all": "npm install && cd packages/api && npm install && cd ../mobile && npm install"
+  }
+}

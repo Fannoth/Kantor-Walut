@@ -1,0 +1,95 @@
+@startuml erd_diagram
+!theme plain
+skinparam backgroundColor White
+
+title Model bazy danych - Diagram ERD
+
+entity "users" {
+  * id : INTEGER <<PK>>
+  --
+  * email : TEXT <<UNIQUE>>
+  * password : TEXT
+  * first_name : TEXT
+  * last_name : TEXT
+  * created_at : DATETIME
+  * updated_at : DATETIME
+}
+
+entity "wallets" {
+  * id : INTEGER <<PK>>
+  --
+  * user_id : INTEGER <<FK>>
+  * currency : TEXT
+  * balance : REAL
+  * created_at : DATETIME
+  * updated_at : DATETIME
+  --
+  <<UNIQUE(user_id, currency)>>
+}
+
+entity "transactions" {
+  * id : INTEGER <<PK>>
+  --
+  * user_id : INTEGER <<FK>>
+  * type : TEXT
+  * amount : REAL
+  * currency : TEXT
+  from_currency : TEXT
+  to_currency : TEXT
+  exchange_rate : REAL
+  * created_at : DATETIME
+}
+
+entity "exchange_rates" {
+  * id : INTEGER <<PK>>
+  --
+  * currency : TEXT
+  * rate : REAL
+  bid : REAL
+  ask : REAL
+  * date : DATE
+  * created_at : DATETIME
+  --
+  <<UNIQUE(currency, date)>>
+}
+
+' Relationships
+users ||--o{ wallets : "1 user has many wallets"
+users ||--o{ transactions : "1 user has many transactions"
+
+' Relationship labels
+users ||--o{ wallets : user_id
+users ||--o{ transactions : user_id
+
+note right of wallets
+  Constraints:
+  - balance >= 0
+  - currency IN ('PLN', 'USD', 'EUR', 'GBP', 'CHF', 'JPY', 'CZK', 'NOK', 'SEK')
+  - UNIQUE(user_id, currency) - jeden portfel na walutę na użytkownika
+end note
+
+note right of transactions
+  Constraints:
+  - type IN ('deposit', 'exchange')
+  - amount > 0
+  - currency NOT NULL
+  - Dla type='exchange': from_currency, to_currency, exchange_rate NOT NULL
+  - Dla type='deposit': from_currency, to_currency, exchange_rate NULL
+end note
+
+note right of exchange_rates
+  Constraints:
+  - rate > 0
+  - currency NOT NULL
+  - date NOT NULL
+  - UNIQUE(currency, date) - jeden kurs na walutę na dzień
+end note
+
+note top of users
+  Constraints:
+  - email format validation
+  - password min 6 characters (hashed with bcrypt)
+  - first_name, last_name NOT NULL
+end note
+
+@enduml

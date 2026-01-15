@@ -1,0 +1,215 @@
+@startuml backend_class_diagram
+!theme plain
+skinparam backgroundColor White
+
+title Diagram klas - Web Service (Node.js Backend)
+
+package "Controllers" {
+  class AuthController {
+    +register(req, res): Promise<void>
+    +login(req, res): Promise<void>
+    -validateUserData(data): boolean
+    -generateToken(user): string
+  }
+
+  class WalletController {
+    +getWallets(req, res): Promise<void>
+    +deposit(req, res): Promise<void>
+    +exchange(req, res): Promise<void>
+    -validateAmount(amount): boolean
+    -checkBalance(userId, currency, amount): Promise<boolean>
+  }
+
+  class TransactionController {
+    +getTransactions(req, res): Promise<void>
+    +createTransaction(req, res): Promise<void>
+    -formatTransactionData(data): Transaction
+  }
+
+  class RatesController {
+    +getCurrentRates(req, res): Promise<void>
+    +getHistoricalRates(req, res): Promise<void>
+    +getWeeklyTrend(req, res): Promise<void>
+    -validateDateRange(start, end): boolean
+  }
+}
+
+package "Services" {
+  class NBPService {
+    -baseURL: string
+    +getCurrentRates(): Promise<Rate[]>
+    +getHistoricalRates(currency, start, end): Promise<Rate[]>
+    +getWeeklyTrend(currency): Promise<Trend>
+    -makeRequest(endpoint): Promise<any>
+    -formatResponse(data): Rate[]
+    -calculateTrend(data): Trend
+  }
+
+  class WalletService {
+    +getUserWallets(userId): Promise<Wallet[]>
+    +updateBalance(userId, currency, amount): Promise<void>
+    +createWallet(userId, currency): Promise<Wallet>
+    +getBalance(userId, currency): Promise<number>
+    -ensureWalletExists(userId, currency): Promise<void>
+  }
+
+  class TransactionService {
+    +createDeposit(userId, amount): Promise<Transaction>
+    +createExchange(userId, fromCurrency, toCurrency, amount, rate): Promise<Transaction>
+    +getUserTransactions(userId): Promise<Transaction[]>
+    +getTransactionById(id): Promise<Transaction>
+  }
+
+  class AuthService {
+    +hashPassword(password): Promise<string>
+    +comparePassword(password, hash): Promise<boolean>
+    +generateJWT(user): string
+    +verifyJWT(token): Promise<User>
+  }
+}
+
+package "Models" {
+  class User {
+    +id: number
+    +email: string
+    +password: string
+    +firstName: string
+    +lastName: string
+    +createdAt: Date
+    +updatedAt: Date
+    +create(userData): Promise<User>
+    +findByEmail(email): Promise<User>
+    +findById(id): Promise<User>
+  }
+
+  class Wallet {
+    +id: number
+    +userId: number
+    +currency: string
+    +balance: number
+    +createdAt: Date
+    +updatedAt: Date
+    +findByUserAndCurrency(userId, currency): Promise<Wallet>
+    +updateBalance(amount): Promise<void>
+    +create(userId, currency): Promise<Wallet>
+  }
+
+  class Transaction {
+    +id: number
+    +userId: number
+    +type: string
+    +amount: number
+    +currency: string
+    +fromCurrency: string
+    +toCurrency: string
+    +exchangeRate: number
+    +createdAt: Date
+    +create(transactionData): Promise<Transaction>
+    +findByUserId(userId): Promise<Transaction[]>
+  }
+
+  class ExchangeRate {
+    +id: number
+    +currency: string
+    +rate: number
+    +bid: number
+    +ask: number
+    +date: Date
+    +save(rateData): Promise<ExchangeRate>
+    +findByCurrency(currency): Promise<ExchangeRate[]>
+    +findByDateRange(currency, start, end): Promise<ExchangeRate[]>
+  }
+}
+
+package "Middleware" {
+  class AuthMiddleware {
+    +verifyToken(req, res, next): Promise<void>
+    +requireAuth(req, res, next): Promise<void>
+    -extractToken(req): string
+  }
+
+  class ValidationMiddleware {
+    +validateRegistration(req, res, next): Promise<void>
+    +validateLogin(req, res, next): Promise<void>
+    +validateDeposit(req, res, next): Promise<void>
+    +validateExchange(req, res, next): Promise<void>
+    -checkRequiredFields(data, fields): boolean
+  }
+
+  class ErrorMiddleware {
+    +handleError(error, req, res, next): void
+    +notFound(req, res, next): void
+    +serverError(error, req, res, next): void
+  }
+}
+
+package "Database" {
+  class Database {
+    -db: sqlite3.Database
+    +connect(): Promise<void>
+    +disconnect(): Promise<void>
+    +query(sql, params): Promise<any>
+    +run(sql, params): Promise<any>
+    +initTables(): Promise<void>
+  }
+
+  class Migration {
+    +createUsersTable(): Promise<void>
+    +createWalletsTable(): Promise<void>
+    +createTransactionsTable(): Promise<void>
+    +createExchangeRatesTable(): Promise<void>
+    +run(): Promise<void>
+  }
+}
+
+package "Routes" {
+  class AuthRoutes {
+    +setupRoutes(): Router
+  }
+
+  class WalletRoutes {
+    +setupRoutes(): Router
+  }
+
+  class TransactionRoutes {
+    +setupRoutes(): Router
+  }
+
+  class RatesRoutes {
+    +setupRoutes(): Router
+  }
+}
+
+' Relationships
+AuthController --> AuthService : uses
+AuthController --> User : manages
+WalletController --> WalletService : uses
+WalletController --> Wallet : manages
+TransactionController --> TransactionService : uses
+TransactionController --> Transaction : manages
+RatesController --> NBPService : uses
+RatesController --> ExchangeRate : manages
+
+WalletService --> Wallet : operates on
+TransactionService --> Transaction : operates on
+NBPService --> ExchangeRate : stores rates
+
+AuthRoutes --> AuthController : routes to
+WalletRoutes --> WalletController : routes to
+TransactionRoutes --> TransactionController : routes to
+RatesRoutes --> RatesController : routes to
+
+AuthMiddleware --> AuthService : uses
+ValidationMiddleware --> ErrorMiddleware : delegates to
+
+User --> Database : persisted in
+Wallet --> Database : persisted in
+Transaction --> Database : persisted in
+ExchangeRate --> Database : persisted in
+
+Migration --> Database : operates on
+
+User ||--o{ Wallet : has many
+User ||--o{ Transaction : has many
+
+@enduml
