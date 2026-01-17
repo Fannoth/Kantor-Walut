@@ -1,0 +1,81 @@
+@startuml use_case_diagram
+!theme plain
+skinparam backgroundColor White
+skinparam actorStyle awesome
+
+title Diagram przypadków użycia - System wymiany walut
+
+' Aktorzy
+actor "Użytkownik" as User
+actor "NBP API" as NBP_API
+
+' System
+rectangle "System wymiany walut" {
+  ' Zarządzanie kontem
+  usecase "Rejestracja" as UC01
+  usecase "Logowanie" as UC02
+  usecase "Wylogowanie" as UC03
+  
+  ' Zarządzanie portfelami
+  usecase "Wyświetlanie portfeli" as UC04
+  usecase "Zasilanie konta" as UC05
+  
+  ' Wymiana walut
+  usecase "Wymiana walut" as UC06
+  usecase "Zarządzanie ulubionymi" as UC07
+  
+  ' Kursy walut
+  usecase "Przeglądanie kursów" as UC08
+  usecase "Historia kursów" as UC09
+  
+  ' Transakcje
+  usecase "Historia transakcji" as UC10
+  
+  ' Analityka
+  usecase "Kalkulator zysków/strat" as UC11
+  usecase "Wykresy trendów" as UC12
+  
+  ' Wewnętrzne
+  usecase "Pobieranie kursów NBP" as UC13
+}
+
+' Relacje User -> Use Cases
+User --> UC01 : rejestruje się
+User --> UC02 : loguje się  
+User --> UC03 : wylogowuje się
+User --> UC04 : przegląda portfele
+User --> UC05 : zasila konto
+User --> UC06 : wymienia waluty
+User --> UC07 : zarządza ulubionymi
+User --> UC08 : sprawdza kursy
+User --> UC09 : przegląda historię kursów
+User --> UC10 : przegląda transakcje
+User --> UC11 : oblicza zyski/straty
+User --> UC12 : analizuje trendy
+
+' Relacje NBP API -> Use Cases  
+NBP_API --> UC13 : dostarcza kursy
+
+' Include relationships
+UC06 ..> UC13 : <<include>>
+UC08 ..> UC13 : <<include>>
+UC09 ..> UC13 : <<include>>
+UC11 ..> UC13 : <<include>>
+UC12 ..> UC13 : <<include>>
+
+' Extend relationships
+UC06 ..> UC07 : <<extend>>
+
+note right of UC13
+  Automatyczne pobieranie
+  aktualnych kursów walut
+  z API NBP
+end note
+
+note right of UC07
+  Rozszerzenie wymiany walut
+  o funkcje zarządzania
+  ulubionymi parami
+end note
+
+@enduml

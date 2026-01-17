@@ -1,0 +1,233 @@
+@startuml mobile_class_diagram
+!theme plain
+skinparam backgroundColor White
+
+title Diagram klas - Aplikacja mobilna (React Native)
+
+package "Screens" {
+  class LoginScreen {
+    -email: string
+    -password: string
+    -loading: boolean
+    +handleLogin(): void
+    +navigateToRegister(): void
+    +validateForm(): boolean
+  }
+
+  class RegisterScreen {
+    -email: string
+    -password: string  
+    -firstName: string
+    -lastName: string
+    -loading: boolean
+    +handleRegister(): void
+    +navigateToLogin(): void
+    +validateForm(): boolean
+  }
+
+  class HomeScreen {
+    -wallets: Wallet[]
+    -selectedCurrency: string
+    -refreshing: boolean
+    +loadWallets(): void
+    +getTotalBalance(): number
+    +handleCurrencyChange(): void
+    +renderWallet(): JSX.Element
+  }
+
+  class ExchangeScreen {
+    -fromCurrency: string
+    -toCurrency: string
+    -amount: string
+    -rate: number
+    -favorites: string[]
+    -loading: boolean
+    +handleExchange(): void
+    +calculateExchange(): number
+    +toggleFavorite(): void
+    +getWalletBalance(): number
+  }
+
+  class DepositScreen {
+    -amount: string
+    -loading: boolean
+    +handleDeposit(): void
+    +formatCurrency(): string
+    +setQuickAmount(): void
+    +validateAmount(): boolean
+  }
+
+  class TransactionsScreen {
+    -transactions: Transaction[]
+    -refreshing: boolean
+    +loadTransactions(): void
+    +formatDate(): string
+    +getTransactionIcon(): string
+  }
+
+  class RatesScreen {
+    -rates: Rate[]
+    -refreshing: boolean
+    +loadRates(): void
+    +formatRate(): string
+    +getTrendIndicator(): JSX.Element
+  }
+
+  class HistoricalRatesScreen {
+    -currency: string
+    -startDate: string
+    -endDate: string
+    -rates: Rate[]
+    +handleSearch(): void
+    +validateDate(): boolean
+    +formatDate(): string
+  }
+
+  class AnalyticsScreen {
+    -transactions: Transaction[]
+    -trends: Trend[]
+    +calculateProfitLoss(): ProfitLoss
+    +getTrendDirection(): string
+    +renderMiniChart(): JSX.Element
+    +getWeeklyTrend(): Trend[]
+  }
+}
+
+package "Services" {
+  class ApiService {
+    -baseURL: string
+    -token: string
+    +login(email, password): Promise<AuthResponse>
+    +register(userData): Promise<AuthResponse>
+    +getWallets(): Promise<Wallet[]>
+    +deposit(amount): Promise<void>
+    +exchange(data): Promise<void>
+    +getTransactions(): Promise<Transaction[]>
+    +setAuthToken(token): void
+  }
+
+  class RatesService {
+    +getCurrentRates(): Promise<Rate[]>
+    +getRatesForPeriod(currency, start, end): Promise<Rate[]>
+    +getWeeklyTrend(currency): Promise<Trend[]>
+    -formatNBPResponse(data): Rate[]
+  }
+
+  class AuthService {
+    +login(credentials): Promise<string>
+    +register(userData): Promise<string>
+    +logout(): Promise<void>
+    +getToken(): Promise<string>
+    +isAuthenticated(): Promise<boolean>
+    -storeToken(token): void
+  }
+
+  class WalletService {
+    +getWallets(): Promise<Wallet[]>
+    +deposit(amount): Promise<void>
+    +getBalance(currency): Promise<number>
+    +exchange(fromCurrency, toCurrency, amount): Promise<void>
+  }
+
+  class TransactionService {
+    +getTransactions(): Promise<Transaction[]>
+    +createTransaction(data): Promise<Transaction>
+    +getTransactionHistory(): Promise<Transaction[]>
+  }
+
+  class FavoritesService {
+    +getFavorites(): Promise<string[]>
+    +addFavorite(pair): Promise<void>
+    +removeFavorite(pair): Promise<void>
+    +isFavorite(pair): Promise<boolean>
+    -storeFavorites(favorites): void
+  }
+}
+
+package "Models" {
+  class User {
+    +id: number
+    +email: string
+    +firstName: string
+    +lastName: string
+    +createdAt: Date
+  }
+
+  class Wallet {
+    +id: number
+    +userId: number
+    +currency: string
+    +balance: number
+    +updatedAt: Date
+  }
+
+  class Transaction {
+    +id: number
+    +userId: number
+    +type: string
+    +amount: number
+    +currency: string
+    +fromCurrency?: string
+    +toCurrency?: string
+    +exchangeRate?: number
+    +createdAt: Date
+  }
+
+  class Rate {
+    +currency: string
+    +rate: number
+    +date: Date
+    +bid?: number
+    +ask?: number
+  }
+
+  class Trend {
+    +currency: string
+    +direction: string
+    +change: number
+    +data: number[]
+  }
+
+  class AuthResponse {
+    +token: string
+    +user: User
+  }
+
+  class ProfitLoss {
+    +amount: number
+    +percentage: number
+    +isProfit: boolean
+  }
+}
+
+' Relationships
+LoginScreen --> AuthService : uses
+RegisterScreen --> AuthService : uses
+HomeScreen --> WalletService : uses
+HomeScreen --> RatesService : uses
+ExchangeScreen --> WalletService : uses
+ExchangeScreen --> RatesService : uses
+ExchangeScreen --> FavoritesService : uses
+DepositScreen --> WalletService : uses
+TransactionsScreen --> TransactionService : uses
+RatesScreen --> RatesService : uses
+HistoricalRatesScreen --> RatesService : uses
+AnalyticsScreen --> TransactionService : uses
+AnalyticsScreen --> RatesService : uses
+
+AuthService --> ApiService : uses
+WalletService --> ApiService : uses
+TransactionService --> ApiService : uses
+RatesService --> ApiService : uses
+
+ApiService --> AuthResponse : returns
+WalletService --> Wallet : manages
+TransactionService --> Transaction : manages
+RatesService --> Rate : manages
+RatesService --> Trend : manages
+AnalyticsScreen --> ProfitLoss : calculates
+
+Wallet --> User : belongs to
+Transaction --> User : belongs to
+
+@enduml
